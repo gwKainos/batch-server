@@ -1,0 +1,99 @@
+plugins {
+    id 'java'
+    id 'checkstyle'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'org.springframework.boot' version '3.4.4'
+    id 'com.diffplug.spotless' version '7.0.2'
+    id 'com.github.ben-manes.versions' version '0.51.0'
+}
+
+group = 'kr.kainos'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+ext {
+    commonsIoVersion = '2.18.0'
+    guavaVersion = '33.4.6-jre'
+    logbackVersion = '1.5.18'
+    lombokVersion = '1.18.38'
+    mockitoVersion = '5.14.2'
+    postgresqlVersion = '42.7.5'
+    swaggerVersion = '2.8.6'
+}
+
+checkstyle {
+    toolVersion = '10.23.0'
+    configFile = rootProject.file("config/checkstyle/google_checks.xml")
+    ignoreFailures = false
+    showViolations = true
+}
+
+spotless {
+    java {
+        googleJavaFormat('1.26.0')
+        target 'src/**/*.java'
+    }
+}
+
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "PASSED", "FAILED", "SKIPPED"
+    }
+}
+tasks.named('test') {
+    useJUnitPlatform()
+    jvmArgs "-Xshare:off"
+}
+
+dependencies {
+    implementation platform("org.springframework.boot:spring-boot-dependencies:3.4.4")
+
+    // Spring Boot Starters
+    implementation "org.springframework.boot:spring-boot-starter-web"
+    implementation "org.springframework.boot:spring-boot-starter-data-jpa"
+    implementation "org.springframework.boot:spring-boot-starter-security"
+    implementation "org.springframework.boot:spring-boot-starter-validation"
+
+    // Database
+    runtimeOnly "org.postgresql:postgresql:${postgresqlVersion}"
+    runtimeOnly "com.h2database:h2"
+
+    // Swagger (OpenAPI)
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${swaggerVersion}"
+
+    // Logging
+    implementation "ch.qos.logback:logback-classic:${logbackVersion}"
+    implementation "ch.qos.logback:logback-core:${logbackVersion}"
+    implementation "net.logstash.logback:logstash-logback-encoder:8.1"
+
+
+    // Commons IO
+    implementation "commons-io:commons-io:${commonsIoVersion}"
+
+    // Lombok
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+
+    // Guava
+    implementation "com.google.guava:guava:${guavaVersion}"
+
+    // Test
+    testImplementation "org.springframework.boot:spring-boot-starter-test"
+    testImplementation "org.mockito:mockito-core:${mockitoVersion}"
+    testImplementation "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
+}

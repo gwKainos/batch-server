@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <!-- 로그 저장 경로 설정 (환경변수 LOGS_DIR 없으면 ./logs 사용) -->
+  <property name="LOGS" value="${LOGS_DIR:-./logs}"/>
+
+  <!-- JSON 콘솔 출력 (운영용) -->
+  <appender name="jsonConsoleAppender" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+      <providers>
+        <pattern>
+          {
+          "level": "%level",
+          "message": "%C{1}, %message"
+          }
+        </pattern>
+        <stackTrace>
+          <fieldName>stacktrace</fieldName>
+          <throwableConverter class="net.logstash.logback.stacktrace.ShortenedThrowableConverter">
+            <exclude>java\..*</exclude>
+            <exclude>net\.sf\.cglib\..*</exclude>
+            <exclude>org\.springframework\..*</exclude>
+            <exclude>sun\..*</exclude>
+            <exclude>jdk\..*</exclude>
+            <maxDepthPerThrowable>20</maxDepthPerThrowable>
+            <shortenedClassNameLength>20</shortenedClassNameLength>
+            <maxLength>2048</maxLength>
+            <rootCauseFirst>true</rootCauseFirst>
+          </throwableConverter>
+        </stackTrace>
+      </providers>
+    </encoder>
+  </appender>
+
+  <!-- 컬러 콘솔 출력 (로컬 개발용) -->
+  <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+    <layout class="ch.qos.logback.classic.PatternLayout">
+      <Pattern>%d{ISO8601} %highlight(%-5level) [%blue(%t)] %yellow(%C{1}): %msg%n%throwable</Pattern>
+    </layout>
+  </appender>
+
+  <!-- 파일 로그 (Rolling 설정 포함) -->
+  <appender name="RollingFile" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <file>${LOGS}/server.log</file>
+    <encoder class="ch.qos.logback.classic.encoder.PatternLayoutEncoder">
+      <Pattern>%d %p %C{1}. [%t] %m%n</Pattern>
+    </encoder>
+    <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+      <fileNamePattern>${LOGS}/server-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+      <maxFileSize>100MB</maxFileSize>
+      <maxHistory>3</maxHistory>
+      <totalSizeCap>500MB</totalSizeCap>
+    </rollingPolicy>
+  </appender>
+
+  <!-- 공통 로거 -->
+  <logger name="ag.act" level="INFO"/>
+  <logger name="org.apache.fontbox.ttf" level="ERROR"/>
+  <logger name="org.apache.pdfbox.pdmodel.graphics.image" level="ERROR"/>
+  <logger name="com.openhtmltopdf" level="ERROR" additivity="false"/>
+
+  <!-- 운영 프로파일 설정 (!local) -->
+  <springProfile name="!local">
+
+    <logger name="org.springframework.web.servlet.mvc.method.annotation.ExceptionHandlerExceptionResolver"
+      level="ERROR"/>
+
+    <logger name="org.hibernate.SQL" level="WARN" additivity="false">
+      <appender-ref ref="jsonConsoleAppender"/>
+    </logger>
+
+    <root level="INFO">
+      <appender-ref ref="RollingFile"/>
+      <appender-ref ref="jsonConsoleAppender"/>
+    </root>
+  </springProfile>
+
+  <!-- 로컬 개발 프로파일 설정 -->
+  <springProfile name="local">
+
+    <logger name="ag.act" level="DEBUG"/>
+
+    <!-- SQL 로깅 -->
+    <logger name="org.hibernate.SQL" level="DEBUG" additivity="false">
+      <appender-ref ref="Console"/>
+    </logger>
+
+    <logger name="org.hibernate.type.descriptor.sql" level="DEBUG" additivity="false">
+      <appender-ref ref="Console"/>
+    </logger>
+
+    <root level="INFO">
+      <appender-ref ref="Console"/>
+    </root>
+  </springProfile>
+
+</configuration>
